@@ -7,7 +7,7 @@ const AuthorSchema = new Schema({
     required: true,
     max: 100
   },
-  last_name: {
+  family_name: {
     type: String,
     required: true,
     max: 100
@@ -19,7 +19,7 @@ const AuthorSchema = new Schema({
 // Virtual for full name
 AuthorSchema
 .virtual('name')
-.get(() => `${this.last_name}, ${this.first_name}`)
+.get(() => `${this.family_name}, ${this.first_name}`)
 
 // Virtual for author's URL
 AuthorSchema
