@@ -1,15 +1,5 @@
 const Book = require('../models/book')
 
-/**
- * Disp;ay Site Home Page
- * 
- * GET /
- * @param {*} req 
- * @param {*} res 
- */
-exports.index = (req, res) =>
-  res.send('NOT IMPLEMENTED: Site Home Page')
-
 /** 
  * Display a list of all books
  * 
@@ -17,8 +7,17 @@ exports.index = (req, res) =>
  * @param {*} req 
  * @param {*} res 
  */
-exports.book_list = (req, res) =>
-  res.send('NOT IMPLEMENTED: Book list')
+exports.book_list = (req, res, next) =>
+  Book.find({}, 'title author')
+    .populate('author')
+    .exec((err, books) => {
+      if (err) { return next(err) }
+      res.render('book_list', {
+        title: 'Book List',
+        book_list: books
+      })
+    }
+  )
 
 /** 
  * Display an book

@@ -19,11 +19,15 @@ const AuthorSchema = new Schema({
 // Virtual for full name
 AuthorSchema
 .virtual('name')
-.get(() => `${this.family_name}, ${this.first_name}`)
+.get(function(){
+  return `${this.family_name}, ${this.first_name}`
+})
 
 // Virtual for author's URL
 AuthorSchema
 .virtual('url')
-.get(() => `/catalog/author/${this._id}`)
+.get(function() {
+  return `/catalog/author/${this._id}`
+})
 
 module.exports = mongoose.model('Author', AuthorSchema)
