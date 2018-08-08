@@ -1,19 +1,21 @@
 const Book = require('../models/book'),
       BookInstance = require('../models/bookinstance'),
-      async = require('async')
+      Author = require('../models/author'),
+      Genre = require('../models/genre'),
+      async = require('async'),
+      { body, validationResult } = require('express-validator/check'),
+      { sanitizeBody } = require('express-validator/filter')
 
 /** 
  * Display a list of all books
- * 
  * GET /catalog/book/
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_list = (req, res, next) =>
   Book.find({}, 'title author')
     .populate('author')
     .exec((err, book_list) => {
-      if (err) { return next(err) }
+      if (err)
+        next(err)
       res.render('book_list', {
         title: 'Book List',
         book_list
@@ -23,23 +25,22 @@ exports.book_list = (req, res, next) =>
 
 /** 
  * Display an book
- * 
  * GET /catalog/book/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_detail = (req, res, next) =>
   async.parallel({
+
     book: cb =>
       Book.findById(req.params.id)
         .populate(['author','genre'])
-        .exec(cb)
-    ,
+        .exec(cb),
+
     book_instance: cb =>
-      BookInstance.find({'book': req.params.id })
-      .exec(cb)
+      BookInstance.find({'book': req.params.id }, cb)
+
   }, (err, results) => {
-    if (err) { return next(err) }
+    if (err) 
+      next(err)
     if (results.book === null ) {
       const err = new Error('Book not found')
       // @ts-ignore
@@ -55,60 +56,128 @@ exports.book_detail = (req, res, next) =>
 
 /** 
  * Form to create new book
- * 
  * GET /catalog/book/create
- * @param {*} req 
- * @param {*} res 
  */
-exports.book_create_get = (req, res) =>
-  res.send('NOT IMPLEMENTED: Book create GET')
+exports.book_create_get = (req, res, next) =>
+  async.parallel({
+    authors: cb => Author.find(cb),
+    genres: cb =>  Genre.find(cb)
+  },
+  (err, results) => {
+    if(err)
+      next(err)
+    const { authors, genres } = results
+    res.render('book_form', {
+      title: 'Create Book',
+      authors,
+      genres
+    })
+  }
+)
 
 /** 
  * Handle book create
- * 
  * POST /catalog/book
- * @param {*} req 
- * @param {*} res 
  */
-exports.book_create_post = (req, res) =>
-  res.send('NOT IMPLEMENTED: Book create POST')
+exports.book_create_post = [
+  // Convert genre to array
+  (req, res, next) => {
+    if(!(req.body.genre instanceof Array)) {
+        req.body.genre = req.body.genre ?
+          [...[req.body.genre]] : []
+    }
+    next()
+  },
+
+  // Validate
+  body('title', 'Must have a title')
+    .isLength({min: 1})
+    .trim(),
+  body('author', 'Must have an author')
+    .isLength({min: 1})
+    .trim(),
+  body('summary', 'Must have a summary')
+    .isLength({min: 1})
+    .trim(),
+  body('isbn', 'Must have an ISBN')
+    .isLength({min: 1})
+    .trim(),
+
+  // Sanitize
+  sanitizeBody('*').trim().escape(),
+
+  (req, res, next) => {
+    const errors = validationResult(req)
+
+    const { title, author, summary, isbn, genre } = req.body
+    const book = new Book({
+      title,
+      author,
+      summary,
+      isbn,
+      genre
+    })
+
+    if(!errors.isEmpty()) {
+      async.parallel({
+        authors: cb => Author.find(cb),
+        genres: cb => Genre.find(cb)
+      },
+      (err, results) => {
+        if(err)
+          next(err)
+
+        results.genres.map(g => {
+          if(book.genre.indexOf(g._id) > -1 ){
+            g.checked='true'
+          }
+        })
+        const { authors, genres } = results
+        res.render('book_form', {
+          title: 'Create Book',
+          authors,
+          genres,
+          book,
+          errors: errors.array()
+        })
+        return
+      })
+    }
+    else {
+      // Is valid. Save book
+      book.save(err => {
+        if(err)
+          next(err)
+        res.redirect(book.url)
+      })
+    }
+  }
+]
 
 /** 
  * Form to update book
- * 
  * GET /catalog/book/:id/edit
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_update_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Book update GET')
 
 /** 
  * Handle book update
- * 
  * PUT /catalog/book/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_update_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Book update POST')
 
 /** 
  * Form to delete book
- * 
  * GET /catalog/book/:id/delete
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_delete_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Book delete GET')
 
 /** 
  * Handle book delete
- * 
  * DELETE /catalog/book/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.book_delete_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Book delete POST')

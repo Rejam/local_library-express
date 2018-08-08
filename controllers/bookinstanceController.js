@@ -1,11 +1,11 @@
 const BookInstance = require('../models/bookinstance')
+const Book = require('../models/book')
+const { body,validationResult } = require('express-validator/check');
+const { sanitizeBody } = require('express-validator/filter');
 
 /** 
  * Display a list of all bookinstances
- * 
  * GET /catalog/bookinstance/
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_list = (req, res, next) =>
   BookInstance.find()
@@ -20,10 +20,7 @@ exports.bookinstance_list = (req, res, next) =>
 
 /** 
  * Display an bookinstance
- * 
  * GET /catalog/bookinstance/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_detail = (req, res, next) =>
   BookInstance.findById(req.params.id)
@@ -44,60 +41,98 @@ exports.bookinstance_detail = (req, res, next) =>
 
 /** 
  * Form to create new bookinstance
- * 
  * GET /catalog/bookinstance/create
- * @param {*} req 
- * @param {*} res 
  */
-exports.bookinstance_create_get = (req, res) =>
-  res.send('NOT IMPLEMENTED: Bookinstance create GET')
+exports.bookinstance_create_get = (req, res, next) =>
+    Book.find({}, 'title', (err, book_list) => {
+      if (err)
+        next(err)
+      res.render('bookinstance_form', {
+        title: 'Create BookInstance',
+        book_list
+      })
+    })
 
 /** 
  * Handle bookinstance create
- * 
  * POST /catalog/bookinstance
- * @param {*} req 
- * @param {*} res 
  */
-exports.bookinstance_create_post = (req, res) =>
-  res.send('NOT IMPLEMENTED: Bookinstance create POST')
+exports.bookinstance_create_post = [
+  // Validate
+  body('book', 'Must specify book.')
+    .isLength({min: 1})
+    .trim(),
+  body('imprint', 'Must specify imprint')
+    .isLength({min: 1})
+    .trim(),
+  body('due_back', 'Invalid date')
+    .optional({ checkFalsy: true })
+    .isISO8601(),
+
+  // Sanitize
+  sanitizeBody('book').trim().escape(),
+  sanitizeBody('imprint').trim().escape(),
+  sanitizeBody('status').trim().escape(),
+  sanitizeBody('due_back').trim().escape(),
+
+  (req, res, next) => {
+    const errors = validationResult(req)
+
+    const { book, imprint, status, due_back } = req.body
+    const bookinstance = new BookInstance({
+      book,
+      imprint,
+      status,
+      due_back
+    })
+
+    if(!errors.isEmpty()) {
+      Book.find({}, 'title', (err, book_list) => {
+        if (err)
+          next(err)
+        res.render('bookinstance_form', {
+          title: 'Create BookInstance',
+          book_list,
+          selected_book: bookinstance.book._id,
+          errors: errors.array()
+        })
+        return
+      })
+    }
+    else {
+      bookinstance.save(err => {
+        if (err)
+          next(err)
+        res.redirect(bookinstance.url)
+      })
+    }
+  }
+]
 
 /** 
  * Form to update bookinstance
- * 
  * GET /catalog/bookinstance/:id/edit
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_update_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Bookinstance update GET')
 
 /** 
  * Handle bookinstance update
- * 
  * PUT /catalog/bookinstance/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_update_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Bookinstance update POST')
 
 /** 
  * Form to delete bookinstance
- * 
  * GET /catalog/bookinstance/:id/delete
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_delete_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Bookinstance delete GET')
 
 /** 
  * Handle bookinstance delete
- * 
  * DELETE /catalog/bookinstance/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.bookinstance_delete_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Bookinstance delete POST')

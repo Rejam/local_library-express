@@ -1,13 +1,12 @@
 const Genre = require('../models/genre'),
       Book = require('../models/book'),
-      async = require('async')
+      async = require('async'),
+      { body, validationResult } = require('express-validator/check'),
+      { sanitizeBody } = require('express-validator/filter')
 
 /** 
  * Display a list of all genres
- * 
  * GET /catalog/genre/
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_list = (req, res, next) =>
   Genre.find()
@@ -22,10 +21,7 @@ exports.genre_list = (req, res, next) =>
 
 /** 
  * Display a genre
- * 
  * GET /catalog/genre/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_detail = (req, res, next) =>
   async.parallel({
@@ -53,60 +49,82 @@ exports.genre_detail = (req, res, next) =>
 
 /** 
  * Form to create new genre
- * 
  * GET /catalog/genre/create
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_create_get = (req, res) =>
-  res.send('NOT IMPLEMENTED: Genre create GET')
+  res.render('genre_form', { title: 'Create Genre '})
 
 /** 
  * Handle genre create
- * 
  * POST /catalog/genre
- * @param {*} req 
- * @param {*} res 
  */
-exports.genre_create_post = (req, res) =>
-  res.send('NOT IMPLEMENTED: Genre create POST')
+exports.genre_create_post = [
+
+  // validate non-empty name
+  body('name', 'Genre name required').isLength({min: 1}).trim(),
+
+  // Sanitize name
+  sanitizeBody('name').trim().escape(),
+
+  // Following validation and sanitization
+  (req, res, next) => {
+    
+    // Extract errors from req
+    const errors = validationResult(req)
+
+    // Create genre with sanitized data
+    const genre = new Genre({ name: req.body.name })
+
+    if (!errors.isEmpty()) {
+      // There are errors. Rerender with sanitized data and/or errors
+      res.render('genre_form', {
+        title: 'Create Genre',
+        genre,
+        errors: errors.array()
+      })
+      return
+    }
+    else {
+      // Data is valid
+      // Check if genre already exists
+      Genre.findOne({'name': req.body.name}, (err, found_genre) => {
+        if (err) { return next(err) }
+        else if (found_genre) { res.redirect(found_genre.url) }
+        else {
+          genre.save(err => {
+            if(err){ return next(err)}
+            res.redirect(genre.url)
+          })
+        }
+      })
+    }
+  }
+]  
 
 /** 
  * Form to update genre
- * 
  * GET /catalog/genre/:id/edit
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_update_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Genre update GET')
 
 /** 
  * Handle genre update
- * 
  * PUT /catalog/genre/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_update_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Genre update POST')
 
 /** 
  * Form to delete genre
- * 
  * GET /catalog/genre/:id/delete
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_delete_get = (req, res) =>
   res.send('NOT IMPLEMENTED: Genre delete GET')
 
 /** 
  * Handle genre delete
- * 
  * DELETE /catalog/genre/:id
- * @param {*} req 
- * @param {*} res 
  */
 exports.genre_delete_post = (req, res) =>
   res.send('NOT IMPLEMENTED: Genre delete POST')
