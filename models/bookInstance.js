@@ -1,6 +1,7 @@
 const mongoose = require('mongoose'),
-      Schema = mongoose.Schema
-
+      Schema = mongoose.Schema,
+      moment = require('moment')
+      
 const BookInstanceSchema = new Schema({
   book: {
     type: Schema.Types.ObjectId,
@@ -28,6 +29,12 @@ BookInstanceSchema
 .virtual('url')
 .get(function() {
   return `/catalog/bookinstance/${this._id}`
+})
+
+BookInstanceSchema
+.virtual('due_back_formatted')
+.get(function() {
+  return moment(this.due_back).format('MMMM Do, YYYY')
 })
 
 module.exports = mongoose.model('BookInstance', BookInstanceSchema)
