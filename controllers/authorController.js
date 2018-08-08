@@ -1,4 +1,6 @@
-const Author = require('../models/author')
+const Author = require('../models/author'),
+      Book = require('../models/book'),
+      async = require('async')
 
 /** 
  * Display a list of all authors
@@ -25,8 +27,28 @@ exports.author_list = (req, res, next) =>
  * @param {*} req 
  * @param {*} res 
  */
-exports.author_detail = (req, res) =>
-  res.send('NOT IMPLEMENTED: Author detail')
+exports.author_detail = (req, res, next) =>
+    async.parallel({
+      author: cb =>
+        Author.findById(req.params.id, cb)
+      ,
+      authors_books: cb =>
+        Book.find({'author': req.params.id}, 'title summary', cb)
+    },
+    (err, results) => {
+      if (err) { return next(err) }
+      if (results.author === null) {
+        const err = new Error('Author not found')
+        err.status = 404
+        return next(err)
+      }
+      res.render('author_detail', {
+        title: 'Author Detail',
+        author: results.author,
+        authors_books: results.authors_books
+      })
+    }
+  )
 
 /** 
  * Form to create new author
