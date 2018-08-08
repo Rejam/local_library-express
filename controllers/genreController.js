@@ -1,4 +1,6 @@
-const Genre = require('../models/genre')
+const Genre = require('../models/genre'),
+      Book = require('../models/book'),
+      async = require('async')
 
 /** 
  * Display a list of all genres
@@ -19,14 +21,34 @@ exports.genre_list = (req, res, next) =>
     })
 
 /** 
- * Display an genre
+ * Display a genre
  * 
  * GET /catalog/genre/:id
  * @param {*} req 
  * @param {*} res 
  */
-exports.genre_detail = (req, res) =>
-  res.send('NOT IMPLEMENTED: Genre detail')
+exports.genre_detail = (req, res, next) =>
+  async.parallel({
+    genre: cb =>
+      Genre.findById(req.params.id)
+        .exec(cb)
+    ,
+    genre_books: cb =>
+      Book.find({'genre': req.params.id})
+        .exec(cb)
+  }, (err, results) => {
+    if (err) { return next(err) }
+    if (results.genre === null) {
+      const err = new Error('Genre not found')
+      err.status = 404
+      return next(err)
+    }
+    res.render('genre_detail', {
+      title: 'Genre Detail',
+      genre: results.genre,
+      genre_books: results.genre_books
+    })
+  })
 
 /** 
  * Form to create new genre

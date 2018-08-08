@@ -1,4 +1,6 @@
-const Book = require('../models/book')
+const Book = require('../models/book'),
+      BookInstance = require('../models/bookinstance'),
+      async = require('async')
 
 /** 
  * Display a list of all books
@@ -26,8 +28,29 @@ exports.book_list = (req, res, next) =>
  * @param {*} req 
  * @param {*} res 
  */
-exports.book_detail = (req, res) =>
-  res.send('NOT IMPLEMENTED: Book detail')
+exports.book_detail = (req, res, next) =>
+  async.parallel({
+    book: cb =>
+      Book.findById(req.params.id)
+        .populate(['author','genre'])
+        .exec(cb)
+    ,
+    book_instance: cb =>
+      BookInstance.find({'book': req.params.id })
+      .exec(cb)
+  }, (err, results) => {
+    if (err) { return next(err) }
+    if (results.book === null ) {
+      const err = new Error('Book not found')
+      err.status = 404
+      return next(err)
+    }
+    res.render('book_detail', {
+      title: 'Title',
+      book: results.book,
+      book_instances: results.book_instance
+    })
+  })
 
 /** 
  * Form to create new book
