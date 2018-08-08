@@ -1,5 +1,6 @@
 const mongoose = require('mongoose'),
-      Schema = mongoose.Schema
+      Schema = mongoose.Schema,
+      moment = require('moment')
 
 const AuthorSchema = new Schema({
   first_name: {
@@ -12,8 +13,8 @@ const AuthorSchema = new Schema({
     required: true,
     max: 100
   },
-  dob: Date,
-  dod: Date
+  date_of_birth: Date,
+  date_of_death: Date
 })
 
 // Virtual for full name
@@ -28,6 +29,22 @@ AuthorSchema
 .virtual('url')
 .get(function() {
   return `/catalog/author/${this._id}`
+})
+
+AuthorSchema
+.virtual('dob')
+.get(function() {
+  return this.date_of_birth ?
+    moment(this.date_of_birth).format('YYYY-MM-DD') :
+    ''
+})
+
+AuthorSchema
+.virtual('dod')
+.get(function() {
+  return this.date_of_death ?
+    moment(this.date_of_death).format('YYYY-MM-DD') :
+    ''
 })
 
 module.exports = mongoose.model('Author', AuthorSchema)
