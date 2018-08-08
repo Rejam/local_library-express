@@ -10,11 +10,11 @@ const Book = require('../models/book')
 exports.book_list = (req, res, next) =>
   Book.find({}, 'title author')
     .populate('author')
-    .exec((err, books) => {
+    .exec((err, book_list) => {
       if (err) { return next(err) }
       res.render('book_list', {
         title: 'Book List',
-        book_list: books
+        book_list
       })
     }
   )
