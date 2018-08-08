@@ -39,6 +39,7 @@ exports.author_detail = (req, res, next) =>
       if (err) { return next(err) }
       if (results.author === null) {
         const err = new Error('Author not found')
+        // @ts-ignore
         err.status = 404
         return next(err)
       }

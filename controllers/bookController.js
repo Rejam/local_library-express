@@ -42,6 +42,7 @@ exports.book_detail = (req, res, next) =>
     if (err) { return next(err) }
     if (results.book === null ) {
       const err = new Error('Book not found')
+      // @ts-ignore
       err.status = 404
       return next(err)
     }

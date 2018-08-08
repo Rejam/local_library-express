@@ -1,4 +1,4 @@
-const Bookinstance = require('../models/bookinstance')
+const BookInstance = require('../models/bookinstance')
 
 /** 
  * Display a list of all bookinstances
@@ -8,7 +8,7 @@ const Bookinstance = require('../models/bookinstance')
  * @param {*} res 
  */
 exports.bookinstance_list = (req, res, next) =>
-  Bookinstance.find()
+  BookInstance.find()
     .populate('book')
     .exec((err, bookinstance_list) => {
       if (err) { return next(err) }
@@ -25,8 +25,22 @@ exports.bookinstance_list = (req, res, next) =>
  * @param {*} req 
  * @param {*} res 
  */
-exports.bookinstance_detail = (req, res) =>
-  res.send('NOT IMPLEMENTED: Bookinstance detail')
+exports.bookinstance_detail = (req, res, next) =>
+  BookInstance.findById(req.params.id)
+    .populate('book')
+    .exec((err, bookinstance) => {
+      if (err) { return next(err) }
+      if (bookinstance === null) {
+        const err = new Error('Book copy not found')
+        // @ts-ignore
+        err.status = 404
+        return next(err)
+      }
+      res.render('bookinstance_detail', {
+        title: 'Book',
+        bookinstance
+      })
+    })
 
 /** 
  * Form to create new bookinstance

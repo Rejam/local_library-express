@@ -47,4 +47,10 @@ AuthorSchema
     ''
 })
 
+AuthorSchema
+.virtual('lifespan')
+.get(function() {
+  return `${this.dob} - ${this.dod}`
+})
+
 module.exports = mongoose.model('Author', AuthorSchema)
