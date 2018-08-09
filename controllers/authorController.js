@@ -129,12 +129,50 @@ exports.author_update_post = (req, res) =>
  * Form to delete author
  * GET /catalog/author/:id/delete
  */
-exports.author_delete_get = (req, res) =>
-  res.send('NOT IMPLEMENTED: Author delete GET')
+exports.author_delete_get = (req, res, next) =>
+  async.parallel({
+    author: cb =>
+      Author.findById(req.params.id, cb),
+    authors_books: cb =>
+      Book.find({'author': req.params.id}, cb)
+  },
+  (err, results) => {
+    if(err)
+      next(err)
+    if(results.author === null)
+      res.redirect('/catalog/authors')
+    res.render('author_delete', {
+      title: 'Delete Author',
+      author: results.author,
+      author_books: results.authors_books
+    })
+  }
+)
 
 /** 
  * Handle author delete
- * DELETE /catalog/author/:id
+ * POST /catalog/author/:id
  */
-exports.author_delete_post = (req, res) =>
-  res.send('NOT IMPLEMENTED: Author delete POST')
+exports.author_delete_post = (req, res, next) =>
+  async.parallel({
+    author: cb =>
+      Author.findById(req.body.authorid, cb),
+    authors_books: cb =>
+      Book.find({'author': req.body.authorid}, cb)
+  },
+  (err, results) => {
+    if (err)
+      next(err)
+    if(results.authors_books.length > 0)
+      res.render('author_delete', {
+        title: 'Delete Author',
+        author: results.author,
+        author_books: results.authors_books
+      })
+    Author.findByIdAndRemove(req.body.authorid, err => {
+      if (err)
+        next(err)
+      res.redirect('/catalog/authors')
+    })
+  }
+)

@@ -26,9 +26,9 @@ block content
           if book
             option(
               value=author._id
-              selected=(author._id.toString() === book.author ? 
-                'selected' : false) #{author.name}
-            )
+              selected=(author._id.toString() === book.author._id.toString() ? 
+                true : false)
+            ) #{author.name}
           else
             option(value=author._id) #{author.name}
 

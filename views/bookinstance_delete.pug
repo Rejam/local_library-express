@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1 #{title}: #{bookinstance.imprint}
+
+  p Do you really want to delete this imprint?
+  form(action="" method="POST")
+    .form-group
+      input#bookinstanceid.form-control(
+        type="hidden"
+        name='bookinstanceid'
+        value=bookinstance._id
+        required=true
+      )
+    button.btn.btn-danger(type='submit') Delete

@@ -127,12 +127,34 @@ exports.bookinstance_update_post = (req, res) =>
  * Form to delete bookinstance
  * GET /catalog/bookinstance/:id/delete
  */
-exports.bookinstance_delete_get = (req, res) =>
-  res.send('NOT IMPLEMENTED: Bookinstance delete GET')
+exports.bookinstance_delete_get = (req, res, next) => {
+  BookInstance.findById(req.params.id, (err, bookinstance) => {
+    if (err)
+      next(err)
+    if (bookinstance === undefined)
+      res.redirect('/catalog/bookinstances')
+    res.render('bookinstance_delete', {
+      title: 'Delete Book instance',
+      bookinstance
+    })
+  })
+}
+
 
 /** 
  * Handle bookinstance delete
  * DELETE /catalog/bookinstance/:id
  */
-exports.bookinstance_delete_post = (req, res) =>
-  res.send('NOT IMPLEMENTED: Bookinstance delete POST')
+exports.bookinstance_delete_post = (req, res, next) => {
+  BookInstance.findById(req.body.bookinstanceid)
+    .then((err, bookinstance) => {
+      if (err)
+        next(err)
+      BookInstance.findByIdAndRemove(req.body.bookinstanceid)
+        .then(err => {
+          if (err)
+            next(err)
+          res.redirect('/catalog/bookinstances')
+        })
+    })
+}
